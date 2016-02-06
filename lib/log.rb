@@ -1,5 +1,7 @@
 require 'rubyutility'
 require 'fileutils'
+require 'hash.rb'
+
 $g_TRACE_ENABLED = false
 $g_WARN_ENABLED = false
 def class_exists?(class_name)   

@@ -2,6 +2,7 @@
 # Likewise, all the methods added will be available for all controllers.
 require 'utility.rb'
 require 'server_settings.rb'
+require 'mycrpt.rb'
 
 class ApplicationController < ActionController::Base
   helper :all # include all helpers, all the time
@@ -10,24 +11,30 @@ class ApplicationController < ActionController::Base
   before_filter :pre_action
    
   def cors_preflight_check
-    if request.method == 'OPTIONS'
+      p "def cors_preflight_check:#{request.method}"
+      cors_set_headers
+      response.headers['Access-Control-Allow-Origin'] = '*'
+      response.headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS, DELETE, PATCH'
+      response.headers['Access-Control-Allow-Headers'] = 'X-MKEY, X-EFI, X-Requested-With, Content-Type, Accept, tenant-id'
+      response.headers['Access-Control-Max-Age'] = '1728000'
+    if request.method.to_s.downcase == 'options'
         p "==>cors_preflight_check"
       #   
       # response.headers['Access-Control-Allow-Origin'] = '*'
       # response.headers['Access-Control-Allow-Methods'] = 'POST, GET, OPTIONS, DELETE, PATCH'
-      # response.headers['Access-Control-Allow-Headers'] = 'X-Requested-With, Content-Type, Accept, tenant-id'
+      # response.headers['Access-Control-Allow-Headers'] = 'X-MKEY, X-EFI, X-Requested-With, Content-Type, Accept, tenant-id'
       # response.headers['Access-Control-Max-Age'] = '1728000'
       render :text => '', :content_type => 'text/plain'
     end
   end
-  # 
+ 
   def cors_set_headers
     headers['Access-Controll-Allow-Origin'] = '*'
     headers['Access-Controll-Allow-Methods'] = 'POST, GET, OPTIONS, DELETE, PATCH'
-    headers['Access-Controll-Allow-Headers'] = 'X-Requested-With, Content-Type, Accept, tenant-id'
+    headers['Access-Controll-Allow-Headers'] = 'X-MKEY, X-EFI, X-Requested-With, Content-Type, Accept, tenant-id'
     headers['Access-Controll-Max-Age'] = '1728000'
     p "==>cors_set_headers"
-
+  
   end
   # Scrub sensitive parameters from your log
   # filter_parameter_logging :password
@@ -152,14 +159,18 @@ class ApplicationController < ActionController::Base
       elsif session[:uid]
           $uid = session[:uid]
       end
-
       
+      p "cookie:#{cookies.inspect}"
+      p "session:#{session.inspect}"
       # __logf("#{request.class.instance_methods.inspect}")
       __logf("request: #{request.request_uri}, #{request.params.inspect}")
+      p "=>pre_action done"
   end
   
   def post_action
       $uid = nil
+      $player = nil
+      #$username = nil
       # if @__t != nil
       #     span = Time.now.to_f - @__t
       #     if span > 1
@@ -194,13 +205,38 @@ class ApplicationController < ActionController::Base
   
        return @version
    end
-   
-   def user_id
-       $uid
+   def get_username_by_id(uid)
+       hash = $memcached.get("user_#{user_id}")
+       if hash
+            return  hash[:name]
+       end
+       return nil
    end
+   def player
+       if $player 
+           return $player
+       else
+           $player = $memcached.get("user_#{user_id}")
+           p "===>player:#{$player.inspect}"
+           return $player
+       end
+   end
+   def user_id
+       p "==>cookie: #{cookies.inspect}, session #{session.inspect}"
+       
+       p "uid:#{$uid}, session uid:#{session[:uid]}"
+       return $uid if $uid
+       $uid = session[:uid]
+       return $uid
+   end
+   
+
+   
+
+   
        # get_session_id with query db or fs
        def get_session_id
-            # p "==>cookie: #{cookies.inspect}"
+            p "==>cookie: #{cookies.inspect}"
             p "===>session id=#{session[:sid]} session uid = #{session[:uid]}"
             p "cookies[:_wh_session] = #{cookies[:_wh_session] }"
 

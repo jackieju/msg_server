@@ -3,7 +3,17 @@ require 'utility.rb'
 require 'emotes.rb'
 
 class MessageController < ApplicationController
-    before_action :check_ip
+    # after_filter :cors_set_headers
+    before_filter :cors_preflight_check
+    
+    def test
+        session[:test] = 1000
+        
+    end
+    def test2
+        p "cookie:#{cookies.inspect}"
+        render :text=>session[:test]
+    end
     
     def pre_action
         # p "pre_action"
@@ -12,18 +22,75 @@ class MessageController < ApplicationController
        @pass_cb = true
        # p "pre_action2"
     end
+    def et
+        render :text=>Time.now.to_i
+    end
+    
+    # log in
+    def et5
+        # session[:uid] = 322323
+        # raise Exception.new("Denied")
+        # success("#{session[:uid] }")
+        # return
+        efi = params[:efi]
+        key = params[:k]
+        
+        # get by key
+        hash = $memcached.get(key.to_s)
+        if hash == nil
+            p "get session by key #{key} failed"
+            raise Exception.new("Denied")
+        end
+        
+        # verify and get uid
+        # uid = (efi.to_i^key.to_i>>2)>>2
+        decode_uid_key(key, efi)
+        session[:uid] = uid
+        
+        
+        p "uid=#{uid}"
+        
+        # delete by key
+        # $memcached.delete(key.to_s)
+        
+        success
+        
+        p "login user #{uid} ok."
+    end
+    
+    def check_session_exist
+        key = request.headers['X_MKEY']
+        p "==>mkey:#{key}"
+        hash = $memcached.get(key.to_s)
+        if hash == nil
+            p "get session by key #{key} failed"
+            raise Exception.new("Denied")
+        end
+        p "get session #{hash.inspect}"
+        $uid = get_uid_from_header
+        p "get uid #{$uid}, #{hash[:u]}"
+        if hash[:u].to_i != $uid
+            p "get session by key #{key} failed"
+            raise Exception.new("Denied")
+        end
+    end
+    
+    def get_uid_from_header
+        key = request.headers['X_MKEY']
+        efi = request.headers['X_EFI']
+        p "mkey:#{key}, efi:#{efi}"
+        return nil if !key || !efi
+        
+        # return (efi.to_i^(key.to_i>>2))>>2
+        return decode_uid_key(key, efi)
+    end
+    
     def getroommsg
-        return if !check_session or !user_data
-        r = ""
-        room = @player.room
-        if room == nil
-            room = @player.get_prop("oldroom")
-        end
-        if room != nil
-            # r = get_room_msg(@player.id, room)
-            r = get_room_msg(@player.id)
-        end
-        p "===>get_room_msg(#{@player.id} #{room}):#{r}"
+        check_session_exist
+
+        r = MsgUtil.get_room_msg(user_id)
+        
+        p "===>get_room_msg(#{user_id}):#{r}"
         render :text=>r
     end
     
@@ -65,9 +132,14 @@ class MessageController < ApplicationController
             # c = {:time => @t}
             # p "==>lastreadtime=#{@t.inspect}"
             @msg = ""
-            ch = session[:ch]
+            
+            #ch = session[:ch]
+            
+            ch = player.ch
+            p "==>player channel:#{ch}"
+            
             # p "ch=#{ch}"
-            ch = default_msg_channels if ch == nil || ch ==""
+            ch = MsgUtil.default_msg_channels if ch == nil || ch ==""
             channels = [uid, "tianshi", "sys"] # default channel
 
             # keys = ["闲聊","江湖传闻","系统公告", "天时", "武林大会"]
@@ -107,7 +179,7 @@ class MessageController < ApplicationController
 
                 # channels = channels.concat(system_channel)
             # p "channels:#{channels}" if is_adm?(uid)
-            @msg = query_msg(uid, channels, @delete.to_i ==1)
+            @msg = MsgUtil.query_msg(uid, channels, @delete.to_i ==1)
             # p "msg=#{@msg}" 
                  # p "msg=#{@msg}" if is_adm?(uid)
             if (@type == "plain")
@@ -171,14 +243,14 @@ class MessageController < ApplicationController
              @msg = sorted_msg2.join("<!--br-->")
             # p "msg2=#{@msg}" if is_adm?(uid)
 
-            if check_version(103)
+            #if check_version(103)
                 if args[:rm] && args[:rm].to_i == 1
                     # get room msg
                     room_msg = nil
                     # room = @player.room
                     # if room
                         # room_msg = get_room_msg(uid, room)
-                        room_msg = get_room_msg(uid)
+                        room_msg = MsgUtil.get_room_msg(uid)
                     # end
 
                     if room_msg
@@ -186,11 +258,11 @@ class MessageController < ApplicationController
                         if !check_version(105)
                             room_msg = room_msg.gsub("\"","'") # becuease client 1.0.4 has bug to call test2() in quest page
                         end
-                         # p "room_msg2:#{room_msg}"
+                         p "room_msg2:#{room_msg}"
                         @msg += "<rm>#{room_msg}</rm><!--br-->" if room_msg.size > 0
                     end
                 end
-            end
+            #end
             # p "LL-->#{@msg}"
             return @msg
             __logf__
@@ -201,22 +273,13 @@ class MessageController < ApplicationController
           # p "++++++>start get: #{Time.now.to_f}"
         # return if !check_session or !user_data
           # p "++++++>done checksession: #{Time.now.to_f}"
-         uid = session[:uid]
-         if (params[:uid])
-             uid=params[:uid].to_i
-         end
-         if uid == nil
-             render :text=>{
-                # :t =>c[:time].to_i,
-                :msg => ""#ar
-            }.to_json
-            # SlowLog.out(__h)
-            return
-        end
+
         
-        print("uid=#{uid}")
+        check_session_exist
+        
+        print("uid=#{user_id}")
               
-        _get(uid, params)
+        _get(user_id, params)
                 
        
         
@@ -270,7 +333,7 @@ $r : 对别人的粗鲁称呼。\n");
         cmd = ar[0]
         # cmd = cmd[1..cmd.size-1]
 
-        p_ar = [player.name].concat(ar[1..ar.size-1])
+        p_ar = [player[:name]].concat(ar[1..ar.size-1])
         p "cmd:#{cmd}, p_ar:#{p_ar.join(",")}"
         strs = emote_list[cmd]
         # p "strs:#{strs.values}"
@@ -278,7 +341,7 @@ $r : 对别人的粗鲁称呼。\n");
             # return strs[p_ar.size-1] % p_ar
             n_name = ""
             n_name = p_ar[1] if p_ar.size > 1
-            if player.sex ==1
+            if player['sex'] ==1
                 _S = "在下"
                 _s = "大爷"
             else
@@ -311,20 +374,29 @@ $r : 对别人的粗鲁称呼。\n");
         
     end
     def sendmsg
-        return if !check_session or !user_data
+        p "headers: #{request.headers.inspect}"
+        # get_session_id
+        check_session_exist
+        
+        if player.name == nil
+            p "user not in session"
+            error("user not in session")
+            return
+        end
+        # return if !check_session or !user_data
         # if !check_busy(5)
         #     error("You are busy!")
         #     return
         # end
         
         msg = params[:m]
-        if msg.size > 100
+        if !msg || msg.size > 100
             error("字数太多了")
             return
         end
         
         ch = params[:ch].to_i
-        if ch < -1
+        if !ch || ch < -1
             error("not allowed")
             return
         end
@@ -346,10 +418,10 @@ $r : 对别人的粗鲁称呼。\n");
         else
             if ch > 0 #私聊
                 msg2 = ""
-                p2 = Player.get(ch)
+                p2_name = get_username_by_id(ch)
                 if p2
-                    room_msg2 = "你对#{p2.name}说:#{msg}"
-                    room_msg = "#{player.name}对#{p2.name}说:#{msg}"
+                    room_msg2 = "你对#{p2_name}说:#{msg}"
+                    room_msg = "#{player.name}对#{p2_name}说:#{msg}"
                 end
                 msg = "#{player.name}对你说:#{msg}"
             elsif ch == 0
@@ -364,28 +436,37 @@ $r : 对别人的粗鲁称呼。\n");
 
 
          # if canReply
-         #     msg = "<span onclick='onreply(this);' id='#{player.id}@#{player.name}'>#{msg}</span>"
+         #     msg = "<span onclick='onreply(this);' id='#{player.id}@#{user_name}'>#{msg}</span>"
          # end         
           msg = msg.gsub("\n", "<br/>")
             p "send_msg:#{msg}"
              
         # msg = li(msg)
-        if ch == 0
-            send_room_msg(player.id, player.roomid, msg)
-            send_msg_to_room(player.roomid, room_msg, player)
+        roomid = params[:roomid]
+        if ch == 0 
+            if roomid
+                MsgUtil.send_room_msg(user_id, roomid, msg)
+                MsgUtil.send_msg_to_room(roomid, room_msg, player)
+            end
             # send_msg_to_room(player.roomid, msg)
         elsif ch > 0
-            send_room_msg(player.id, player.roomid, li(room_msg2))
-            send_msg_to_room(player.roomid, li(room_msg), player)
-            send_msg(ch, msg)
+            MsgUtil.send_room_msg(user_id, roomid, li(room_msg2))
+            MsgUtil.send_msg_to_room(roomid, li(room_msg), player)
+            MsgUtil.send_msg(ch, msg)
         else
-            send_msg(ch, msg)
+            MsgUtil.send_msg(ch, msg)
         end
         
+        ret_msg = nil
         if params[:get] == "1"
-            _get(player.id, params)
+            _get(user_id, params)
+            # ret_msg = @msg.split("\n")
+            ret_msg = @msg
         end
-        success("ok",{:msg=>@msg})
+        
+        p "sendmsg ok #{ret_msg}"
+        success("ok",{:msg=>ret_msg})
+        # render :json=>{:msg=>"ok"}
     end
     
     

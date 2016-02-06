@@ -67,7 +67,7 @@ module Msg
             # get msg file by channel
             # channel can be number or string
             def get_msg_file(ch)
-                if (ch.class == Fixnum)
+                if (ch.class == Fixnum || ch.to_i.to_s == ch )
                     id = ch.to_i
                     if id < 0 
                         _ch = @@_channels_by_id[id.to_s]

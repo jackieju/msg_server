@@ -3,8 +3,10 @@ module MsgUtil
     class << self
 
     # send msg to all members in room
-    # if specify p, then not send to p (Player object)
-    def send_msg_to_room(r, m, p=nil)
+    # if specify pid, then not send to p (Player object)
+    def send_msg_to_room(r, m, pid=nil)
+        # tempariarily disable send msg to room because server is not in same network
+            return
             if r.class == String
                 room = Game::Room::Room.get(r)
             else
@@ -12,7 +14,7 @@ module MsgUtil
             end
             return if room == nil
            room.objs.each{|k,v|
-                if v[:o].is_a?(Pc) && (p==nil || v[:o].id != p.id)
+                if v[:o].is_a?(Pc) && (pid==nil || v[:o].id != pid)
                     send_room_msg(v[:o].id, room.id, m)
                 end           
            }   
@@ -82,7 +84,7 @@ module MsgUtil
 
 =end
     def clear_room_msg(uid)
-        fname="#{JU::Msg.get_msg_file(uid)}_room"
+        fname=get_user_room_msg_file(uid)
 
         begin
             if FileTest::exists?(fname)   
@@ -100,6 +102,9 @@ module MsgUtil
         end
     end
 
+    def get_user_room_msg_file(uid)
+        "#{JU::Msg.get_msg_file(uid)}_room"
+    end
     # roomid: room object
     #         room id 'room/yangzhou/kedian'
     #         "_any_": ignore room (when show2.erb javascript check room of msg with g_current_room_id)
@@ -109,12 +114,12 @@ module MsgUtil
 
 
         # p "roomid class is #{roomid.class}"
-        if roomid.class == Game::Room::Room
-            roomid = roomid.id
-        end
+        #if roomid.class == Game::Room::Room
+        #    roomid = roomid.id
+        #end
         m = m.gsub("\n", "")
         m = "<rm id='#{roomid}'>#{m}</rm>"
-        fname="#{JU::Msg.get_msg_file(uid)}_room"
+        fname=get_user_room_msg_file(uid)
 
         time = Time.now
         css_class="roommsg"
@@ -127,8 +132,8 @@ module MsgUtil
     
     def get_room_msg(uid)
 
-        fname="#{JU::Msg.get_msg_file(uid)}_room"
-        # p "==>fname:#{fname}"
+        fname=get_user_room_msg_file(uid)
+        p "==>fname:#{fname}"
         ret = []
          ret2 = ""
          # p "ch=#{ch}"
@@ -143,7 +148,7 @@ module MsgUtil
                             f.seek(0) 
                             f.truncate(0)
                         }
-                        # p "data:#{data}"
+                        p "data:#{data}"
                         data.scan(/<rm1>\[(.*?)\](.*?)<\/rm1>/im){|m|
                              # p "match1:#{m.inspect}"
                              t = Time.at(m[0].to_i)
@@ -158,7 +163,7 @@ module MsgUtil
                         end
                         }
 
-                # p "ret:#{ret.inspect}"
+                p "ret:#{ret.inspect}"
 
             end
         rescue Exception=>e
@@ -289,9 +294,13 @@ module MsgUtil
     end
          def send_msg(ch, m, type='')
                     # bRaw = false
-                    if ch.class == String
-                       channel = get_channel_by_name(ch)
-                       ch = channel[:id]
+                    if ch.class == String 
+                       if ch.to_i.to_s != ch
+                           channel = JU::Msg.get_channel_by_name(ch)
+                           ch = channel[:id]
+                       else
+                           ch = ch.to_i
+                       end
                     end
                     stype=""
                      css_class=""
@@ -343,12 +352,12 @@ module MsgUtil
                      onclick=""
                      # p "ch:#{ch}, player:#{player}"
                      if (ch == -1 || ch >0)
-                         player = current_player
+                         # player = current_player
 
-                         if player
+                         # if player
                          # onclick = "onclick='reply(#{player.id}, \\'#{player.query('name')}\\')'"
-                            onclick="onclick='onreply();' id='#{player.id}@#{player.name}##{Time.now.to_f}'"
-                        end
+                            onclick="onclick='onreply();' id='#{user_id}@#{user_name}##{Time.now.to_f}'"
+                        # end
                      end
 
                   time = Time.now
