@@ -1,0 +1,1 @@
+ps ax | grep 'ruby' | grep 'crond' | grep -v 'cron j' | grep -v 'grep' |awk '{print $1}' |xargs kill -9 

@@ -1,0 +1,107 @@
+#!/usr/bin/env ruby
+ENV['RAILS_ENV'] = ARGV.first || ENV['RAILS_ENV'] || 'development'
+p "===> config file #{File.expand_path(File.dirname(__FILE__) + "/../config/environment")}"
+require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
+require "jobs/cron.rb"
+require "server_settings.rb"
+require "lib/utility.rb"
+
+# config.logger = Logger.new("#{Rails.root}/log/#{Rails.env}_cron.log", 20, 51200000)
+# config.logger.level = Logger::DEBUG    
+puts "\nprocess id #{$$}\n"
+p "process id #{$$}"
+p "argments #{$*}"
+
+$launched = false
+# confs = ["production", "cron", "development", "cron_battled"]
+# launchables = ["battled", "global_quest", "rank", "daily", "hourly", "5min", "refresh", "sec", "sec2"]
+$count = 0
+
+def before_launch
+    ActiveRecord::Base.connection.reconnect!
+end
+
+def error_h(job_name, e= nil)
+    msg = "!!Exception when executing job [#{job_name}]"
+    if e
+        msg += ": #{exp_to_s(e)}"
+    end
+    log_msg(msg, "err", 10)
+    p msg
+    err(e)
+    Userext.connection.reconnect!
+    
+end
+def lanuch_single_job(s)
+    preload_modules
+    if  s== "battled"
+        launch_battled
+        $count += 1
+        $launched =true
+    elsif s == "global_quest"
+       launch_global_quest
+       $count += 1
+       
+        $launched =true
+    elsif s == "rank"
+        launch_rank_job
+        $count += 1
+        
+         $launched =true
+    elsif s == "hourly"
+        launch_hourly_job
+        $count += 1
+        
+         $launched =true
+    elsif s == "refresh"
+        launch_refresh_job
+        $count += 1
+        
+         $launched =true
+    elsif s == "5min"
+        launch_5min_job
+        $count += 1
+        
+         $launched =true
+    elsif s == "daily"
+        launch_daily_job
+        $count += 1
+        
+         $launched =true
+    elsif s == "sec"
+        launch_sec_job
+        $count += 1
+        
+         $launched =true
+    elsif s == "sec2"
+        launch_sec2_job
+        $count += 1
+        
+         $launched =true
+     elsif s == "calloutd"
+         launch_calloutd({
+             :ms=>0.5,
+             :before=>"before_launch",
+             :error=>"error_h",
+             :debug=>true,
+         })
+         $count +=1
+         $launched =true
+    elsif s == "statisticsd"
+        launch_statisticsd
+        $count +=1
+        $launched =true
+             
+    end
+end
+
+ar = $*[1..$*.size-1]
+ar.each{|s|
+    p "==>#{s}"
+    # next if confs.include?(s)
+    lanuch_single_job(s) if g_launchables.include?(s)
+}
+p "#{$count} jobs launched !"
+puts "\n#{$count} jobs launched !\n"
+
+# launch_jobs if $launched == false

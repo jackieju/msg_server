@@ -1,16 +1,18 @@
+require 'msg_common.rb'
+
 class MsgController < ApplicationController
     ### api ###
     # 
      before_filter :check_ip
      
-     def test
-         session[:test] = 1000
-         
-     end
-     def test2
-         p "cookie:#{cookies.inspect}"
-         render :text=>session[:test]
-     end
+     # def test
+     #        session[:test] = 1000
+     #        
+     #    end
+     #    def test2
+     #        p "cookie:#{cookies.inspect}"
+     #        render :text=>session[:test]
+     #    end
      def check_ip
         if (request.remote_ip != g_valid_msg_client_ip)
             raise Exception.new("Denied")
@@ -28,24 +30,7 @@ class MsgController < ApplicationController
             return
         end
         
-        # save it to memcached
-        $memcached.set(key, {
-            :u=>uid
-        })
-        p "added session with key #{key}"
-        
-        # delete old mkey
-        hash = $memcached.get("user_#{uid}")
-        if hash && hash[:mkey]
-            $memcached.delete(hash[:mkey])
-        end
-        $memcached.set("user_#{uid}", {
-            :name=>n,
-            :mkey=>key,
-            :ch=>ch,
-            :sex=>sex
-        })
-        p "added user user_#{uid}"
+       receive_info(params)
         
         success
     end

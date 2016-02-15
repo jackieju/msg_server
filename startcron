@@ -1,0 +1,9 @@
+echo rm nohup.out
+rm -f nohup.out
+# nohup script/crond cron
+
+nohup script/crond cron_daily daily > /dev/null 2>&1 &
+nohup script/start_msg_server cron_daily crond> /dev/null 2>&1 &
+
+
+ps -ef | grep ruby

@@ -294,9 +294,14 @@ module MsgUtil
     end
          def send_msg(ch, m, type='')
                     # bRaw = false
+                    p "send_msg:#{ch} #{m} #{type}"
                     if ch.class == String 
                        if ch.to_i.to_s != ch
                            channel = JU::Msg.get_channel_by_name(ch)
+                           if channel == nil
+                               p "no this channel #{ch}"
+                               return 
+                           end
                            ch = channel[:id]
                        else
                            ch = ch.to_i
@@ -369,6 +374,7 @@ module MsgUtil
                      # else
                          msg = "<span class='#{css_class}' #{onclick}><span class='t'>[#{st}]</span><span class='#{css_class}_t'>#{stype}</span>#{m}<br/></span><!--br-->"
                      # end
+                
                 JU::Msg.send_msg(ch, msg)
             end
             def delete_msg(ch)

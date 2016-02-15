@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+ENV['RAILS_ENV'] = ARGV.first || ENV['RAILS_ENV'] || 'development'
+p "===> config file #{File.expand_path(File.dirname(__FILE__) + "/../config/environment")}"
+require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
+
+require 'msgserver.rb'
+
+module Rails
+    class Logger
+        def debug(m)
+            print "#{m}\n"
+        end
+       def error(m)
+            print "#{m}\n"
+        end
+    end
+    def self.logger
+        @log = Logger.new
+        return @log
+    end
+        
+end
+def p(m, stack=0)
+    print m
+    print "\n"
+end
+
+########### main ############
+p "process id #{$$}"
+p "argments #{$*.join(",")}"
+# $*[0] development/production
+# $*[1] method
+# $*[2] parameters of method (uid, ...) 
+    # preload_modules
+    $*.each{|s|
+        if s == "rank"
+            rank_loc
+        elsif s == "wudujiao"
+            do_global_quests
+        else
+        end
+    }
+    start_msg_server
+    
