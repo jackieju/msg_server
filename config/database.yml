@@ -26,3 +26,9 @@ cron_daily:
   database: db/production.sqlite3
   pool: 5
   timeout: 5000
+
+cron_gserver:
+    adapter: sqlite3
+    database: db/production.sqlite3
+    pool: 5
+    timeout: 5000

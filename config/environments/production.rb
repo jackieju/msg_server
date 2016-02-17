@@ -33,7 +33,7 @@ config.action_view.cache_template_loading            = true
 
 # config.logger = Logger.new("#{Rails.root}/log/#{Rails.env}#{Date.today.to_s}.log", "daily")
 #按日志文件大小切分,每50M切分一次（即每50M时轮换一次）
-config.logger = Logger.new("#{Rails.root}/log/#{Rails.env}1.log", 50, 51200000*2)
+config.logger = Logger.new("#{Rails.root}/log/#{Rails.env}1.log", 20, 51200000*2)
 
 #必须加这一句，不然会以debug模式打印日志
  config.logger.level = Logger::INFO 

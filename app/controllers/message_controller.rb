@@ -136,7 +136,7 @@ class MessageController < ApplicationController
             #ch = session[:ch]
             
             ch = player.ch
-            p "==>player channel:#{ch}"
+            #p "==>player channel:#{ch}"
             
             # p "ch=#{ch}"
             ch = MsgUtil.default_msg_channels if ch == nil || ch ==""
@@ -147,7 +147,7 @@ class MessageController < ApplicationController
             # if params[:s] && params[:s].to_i==1
             #     channels.push("sys")
             # end
-
+            #p "===>111"
             __logf__
 
             if args[:c] && args[:c].to_i==1
@@ -176,11 +176,19 @@ class MessageController < ApplicationController
                 end
             end
             __logf__
+            #print "===>channels:#{channels}"
 
                 # channels = channels.concat(system_channel)
             # p "channels:#{channels}" if is_adm?(uid)
-            @msg = MsgUtil.query_msg(uid, channels, @delete.to_i ==1)
-            # p "msg=#{@msg}" 
+            begin
+                #p "--->1, uid:#{uid}, channels:#{channels}, delete:#{@delete}"
+                @msg = MsgUtil.query_msg(uid, channels, @delete.to_i ==1)
+                #p "--->2, uid:#{uid}, channels:#{channels}"
+                
+            rescue Exception=>e
+                pe e.inspect
+            end
+            p "msg=#{@msg}" 
                  # p "msg=#{@msg}" if is_adm?(uid)
             if (@type == "plain")
                 @msg = @msg.gsub(/<.*?>/,"")
@@ -277,7 +285,7 @@ class MessageController < ApplicationController
         
         check_session_exist
         
-        print("uid=#{user_id}")
+        #print("uid=#{user_id}")
               
         _get(user_id, params)
                 

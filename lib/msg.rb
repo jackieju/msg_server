@@ -105,7 +105,7 @@ module Msg
                 dir = "#{fs_root}/#{dir.to_s}/#{id}_lastread"
                 FileUtils.makedirs(dir)
                 fname = "#{dir}/jsondata" 
-                # p "filename #{fname}"
+                #p "query_filedata:filename #{fname}"
 
                 begin
                     if FileTest::exists?(fname) 
@@ -143,7 +143,7 @@ module Msg
                         open(fname, "w+") {|f|
                                f.write(json)
                            }
-
+                         #p "saved json to file #{fname}"
 
                 rescue Exception=>e
                      err e
@@ -177,7 +177,7 @@ module Msg
             # delete=> delete message afterawards
             def query_msg(uid, ch_array, delete=false)
 
-                # p "++++++>start query_msg: #{Time.now.to_f}"
+                 #p "++++++>start query_msg: #{Time.now.to_f}"
                 d = ""
                 # time = t[:time]
                 data = query_filedata(uid)
@@ -188,11 +188,11 @@ module Msg
                         lastread= JSON.parse(lastread)
                     end
                 end
-                
+                #p "query_msg1:#{uid}, #{lastread.inspect}" 
                 __logf__
 
                 lastread = {} if !lastread
-                # p "=>last read = #{lastread.inspect}, #{lastread['191']}, #{lastread["191"]},  #{lastread["191"]}"
+                #p "=>last read = #{lastread.inspect}, #{lastread['191']}, #{lastread["191"]},  #{lastread["191"]}"
                 
                 ch_array.each{|ch|
                     _t= lastread[ch.to_s]
@@ -223,6 +223,7 @@ module Msg
                             t = t2
                         end
                     end
+                    #p "query_msg2:#{uid}" 
                     
                     c = {:time=>t}
                     # p "c:#{c.inspect}"
@@ -239,10 +240,12 @@ module Msg
 
                         r = get_msg(ch, delete, c)
                         d += r[:data]
-                        # p "->query_msg r=#{r.inspect}, t=#{t.inspect}, data=#{r[:data]}"
+                        #p "->query_msg r=#{r.inspect}, t=#{t.inspect}, data=#{r[:data]}"
                         lastread[ch.to_s] = r[:time].to_f+0.000001 if r[:time] && (r[:time] <=> t) > 0
                     end
                 }
+                #p "query_msg3:#{uid}, #{lastread.inspect}" 
+                
                 __logf__
                 # p "=>lastread=#{lastread}"
                 if delete
@@ -252,6 +255,7 @@ module Msg
                 # delete_msg(ch)
                 # p "===>d=#{d}"
                         # p "++++++>end query_msg: #{Time.now.to_f}"
+                        #p "query_msg4:#{uid}" 
 
                 return d
             end
@@ -284,8 +288,12 @@ module Msg
                  # p "====>context time #{time.inspect}, delete=#{delete}, filename=#{fname}"
                 begin
                     if FileTest::exists?(fname)   
+                        #p "get_msg1:#{fname}"
+                        
                               # aFile = File.new(fname,"r")
                         if delete 
+                            #p "get_msg2:#{fname}"
+                            
                            open(fname, "r+") {|f|
                                ret[:data] = f.read
                                f.seek(0)
@@ -299,7 +307,10 @@ module Msg
                                        ret[:data] = ret[:data].gsub(/^\[.*?\]/, "") 
                                 end
 __logf__(fname)
+                            #p "get_msg21:#{fname}"
+                            
                         else
+                            #p "get_msg3:#{fname}"
 
                             # p "filename=#{fname}"
                             ret[:data] = ""
@@ -345,6 +356,7 @@ __logf__()
                             ar.reverse!
 __logf__(ar.size)
                             
+#p "get_msg4:#{fname}"
 
                             # record last read time
                             if ar.size >0
@@ -354,9 +366,12 @@ __logf__(ar.size)
                                 ret[:time] = _t if (_t <=> time) >0
                                 end
                             end
+                            #p "get_msg5:#{fname}"
 
                             ar.each{|line|
-                                # p "line = #{line}"
+                                #p "get_msg6:#{fname}"
+                                
+                                #p "line = #{line}"
                                 md = /<span class='t'>\[(.*?)\]<\/span>(.*)$/.match(line)
                                 if !md
                                     p "parse failed! line=#{line}"
@@ -368,9 +383,9 @@ __logf__(ar.size)
                                  # p "md1=#{md[1].inspect}==>md2=#{md[2].inspect}"
                                 # p t <=> time
                                  # p "sys_msg=#{sys_msg},#{md[1].to(15)} "
-
+                                 #p "t:#{t}, time:#{time}"
                                 if ( time && t&& (t <=> time) > 0 ) or time==nil
-                                    # p "=====>111"
+                                    #p "=====>111"
                                     #                              p "[#{md[1].to(15)}]#{md[2]}\n"+ret[:data] 
                                     if sys_msg
 
@@ -388,6 +403,7 @@ __logf__(ar.size)
                             file.close
                         end
 
+                        #p "get_msg7:#{ret.inspect}"
 
                               # aFile.close
                     end

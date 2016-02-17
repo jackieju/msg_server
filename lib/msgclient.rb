@@ -37,5 +37,5 @@ class MsgClient
     end
 end
 # $msgClient = MsgClient.new(g_msg_server, g_msg_server_port)
-$msgClient  = MsgClient.new("127.0.0.1", 1234)
-p $msgClient.puts("send -1 3 hahaha")
+#$msgClient  = MsgClient.new("127.0.0.1", 1234)
+#p $msgClient.puts("send -1 3 hahaha")

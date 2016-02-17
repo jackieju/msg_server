@@ -293,8 +293,10 @@ module MsgUtil
         send_raw_msg("<div style='color:#ee6666'><span style='color:#ee6666'>[奖励]</span>#{m}</div>")
     end
          def send_msg(ch, m, type='')
+             
                     # bRaw = false
                     p "send_msg:#{ch} #{m} #{type}"
+                    return if m==nil || m.strip == ""
                     if ch.class == String 
                        if ch.to_i.to_s != ch
                            channel = JU::Msg.get_channel_by_name(ch)

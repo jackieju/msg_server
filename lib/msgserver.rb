@@ -99,7 +99,7 @@ class MsgServer < GServer
           count += 1 
           line = io.readline
       end
-     return buf 
+     return buf.chomp 
   end
 
   def handler(io, line)
@@ -116,32 +116,51 @@ class MsgServer < GServer
           }
           receive_info(params)
       elsif line.start_with?("send ")  # send_msg <ch> <type> <m>
+          # s = line[5..line.size-1].strip
+          # 
+          # i = s.index(" ")
+          # if i == nil 
+          #     io.puts("error: invalid parameter for <ch>\n")
+          #     return false
+          # end  
+          # 
+          # ch = s[0..i-1]
+          #         
+          # while (s[i+1..i+1] == " ")
+          #       i+=1
+          # end
+          # i2 = s.index(" ", i+1)
+          # 
+          # if  i2 == nil
+          #     io.puts("error: invalid parameter <type>\n")
+          #     return false
+          # end
+          # type = s[i+1..i2-1]
+          # 
+          # m = s[i2+1..s.size-1]
+          # p "m:#{m}"
+          # 
+          # MsgUtil.send_msg(ch, m, type) 
           s = line[5..line.size-1].strip
-          
-          i = s.index(" ")
-          if i == nil 
-              io.puts("error: invalid parameter for <ch>\n")
-              return false
-          end  
-          
-          ch = s[0..i-1]
-                  
-          while (s[i+1..i+1] == " ")
-                i+=1
-          end
-          i2 = s.index(" ", i+1)
-          
-          if  i2 == nil
-              io.puts("error: invalid parameter <type>\n")
-              return false
-          end
-          type = s[i+1..i2-1]
-          
-          m = s[i2+1..s.size-1]
-          p "m:#{m}"
-          
-          MsgUtil.send_msg(ch, m, type) 
-          
+            i = s.index(" ")
+            if i == nil 
+                io.puts("error: invalid parameter for <u>\n")
+                return false
+            end  
+            ch = s[0..i-1]
+            p "ch:#{ch}"
+
+            while s[i+1..i+1] == " "
+                  i+=1
+            end
+
+            type = s[i+1..s.size-1].strip
+            p "type:#{type}"
+
+            m = read_body(io)
+            p "m:#{m}"
+
+            MsgUtil.send_msg(ch, m, type) 
       elsif line.start_with?("sendr ") # send_room_msg  <u> <r> <m>
           s = line[6..line.size-1].strip
           i = s.index(" ")
