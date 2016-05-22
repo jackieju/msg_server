@@ -205,13 +205,7 @@ class ApplicationController < ActionController::Base
   
        return @version
    end
-   def get_username_by_id(uid)
-       hash = $memcached.get("user_#{user_id}")
-       if hash
-            return  hash[:name]
-       end
-       return nil
-   end
+
    def player
        if $player 
            return $player

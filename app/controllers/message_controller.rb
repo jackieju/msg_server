@@ -186,7 +186,7 @@ class MessageController < ApplicationController
                 #p "--->2, uid:#{uid}, channels:#{channels}"
                 
             rescue Exception=>e
-                pe e.inspect
+                pe e
             end
             p "msg=#{@msg}" 
                  # p "msg=#{@msg}" if is_adm?(uid)

@@ -53,7 +53,14 @@ end
 def user_id
     $uid
 end
-
+def get_username_by_id(uid)
+    hash = $memcached.get("user_#{user_id}")
+    if hash
+         return  hash[:name]
+    end
+    return nil
+end
 def user_name
-    $username
+    #$username
+    get_username_by_id(user_id)
 end

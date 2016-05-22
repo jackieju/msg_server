@@ -27,6 +27,6 @@ def receive_info(params)
         :sex=>sex
     })
     p "added user user_#{uid}"
-    
+    log_msg("add user #{uid}(#{key}) to memcached", "gserver")
     return "OK"
 end

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # mongrel_rails cluster::restart
 
 mongrel_rails cluster::stop -C config/mongrel_cluster.yml --clean

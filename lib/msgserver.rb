@@ -1,3 +1,6 @@
+
+require 'rubygems' # required when run only this ruby file
+require 'server_settings.rb'
 require 'gserver'
 require 'util_msg.rb'
 require 'msg.rb'
@@ -11,6 +14,8 @@ class MsgServer < GServer
     # and the lines of chat
     @@client_id = 0
     @@chat = []
+    @@web_worker = 0
+    @@job_worker = 0
   end
   
   # io is TCPSocket
@@ -24,11 +29,11 @@ class MsgServer < GServer
     my_position = @@chat.size
     
     io.puts("Welcome to the chat, client #{@@client_id}!\n")
-    
     # Leave a message on the chat queue to signify this client
     # has joined the chat
     @@chat << [my_client_id, ""]
-    
+    t_last_access = Time.now.to_i
+    count = 0
     loop do 
         
       # Every 5 seconds check to see if we are receiving any data 
@@ -36,9 +41,21 @@ class MsgServer < GServer
         # If so, retrieve the data and process it..
         #line = io.gets
         p "..."
-        line = io.readline
+        
+        # read synchronizedly
+       # p "#{io}:#{io.class.instance_methods.inspect}"
+       #p "===>"+io.method(:readline).class.instance_methods.inspect
+       #p "===>"+io.method(:readline).arity.to_s
+        line = io.readline()
         p "line:#{line}"
         line = line.strip
+        
+        
+        # log first msg 
+        #log_msg("client #{@@client_id}:#{line}", "gserver") if count == 0
+        #count += 1
+        
+        
         # If the user says 'quit', disconnect them
         if line == 'quit'
             p "client quit"
@@ -50,7 +67,7 @@ class MsgServer < GServer
         handler(io, line)
         p "handled"
     rescue Exception=>e
-        p e
+        p "exception:#{e}"
         err(e)
     end
         # Shut down the server if we hear 'shutdown'
@@ -71,6 +88,14 @@ class MsgServer < GServer
   end
   
   # overridden
+  # client: TCPSocket  
+  def disconnecting(clientport)
+      super
+      p "disconnection from port #{clientport}"
+  end
+  
+  # overridden
+  # client: TCPSocket
   def connecting(client)
       super
       addr = client.peeraddr 
@@ -79,10 +104,9 @@ class MsgServer < GServer
       # addr[1] => port on client
       p("#{self.class.to_s} #{@host}:#{@port} client:#{addr[1]} " +
         "#{addr[2]}<#{addr[3]}> connect")
-        
-     return true if addr[2]=='localhost' || addr[3]=='127.0.0.1'
      
-     if ip_list.include?(addr[3])
+     if addr[2]=='localhost' || addr[3]=='127.0.0.1' || ip_list.include?(addr[3])
+         log_msg("new connection from #{addr[3]}#{client}! connections #{connections}", "gserver")
          return true
      else
          p "client #{addr[3]} not in ip list #{ip_list}"
@@ -147,6 +171,7 @@ class MsgServer < GServer
                 io.puts("error: invalid parameter for <u>\n")
                 return false
             end  
+            p "s:#{s}, i=#{i}"
             ch = s[0..i-1]
             p "ch:#{ch}"
 
@@ -182,7 +207,7 @@ class MsgServer < GServer
           p "m:#{m}"
    
           MsgUtil.send_room_msg(u, r, m)
-      elsif line.start_with?("senda ") # send_raw_msg
+      elsif line.start_with?("senda ") # send_raw_msg <m>
           s = line[6..line.size-1].strip
           MsgUtil.send_raw_msg(s)
       
@@ -196,6 +221,16 @@ class MsgServer < GServer
       
           MsgUtil.clear_room_msg(s)
       
+      elsif  line.start_with?("if ") # info
+          s = line[3..line.size-1].strip
+          if s.index("cron")
+              @@job_worker +=1
+          elsif s.index("mongrel")
+              @@web_worker += 1
+          end
+          log_msg(s, "gserver")
+          log_msg("connections #{connections}, job #{@@job_worker}, web #{@@web_worker}", "gserver")
+          
       else
           io.puts("error: invalid command\n")
           return false
@@ -210,12 +245,15 @@ def start_msg_server
     server = MsgServer.new(12345, "0.0.0.0")
     server.audit = true 
     server.set_ip_list(["115.29.246.68"])
-    server.start(50) # start with maximum 20 connection
+    server.start(100) # start with maximum 20 connection
     p "server started on port #{server.port}"
+    log_msg("server started on port #{server.port}", "gserver")
     #loop do
     #  break if server.stopped?
     #end
     server.join
     puts "Server has been terminated"
+    log_msg("Server on port #{server.port} has been terminated ", "gserver")
+    
 end
 #start_msg_server

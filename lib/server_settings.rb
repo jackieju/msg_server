@@ -12,3 +12,7 @@ def g_launchables
    #["battled", "global_quest", "rank", "daily", "hourly", "5min", "refresh", "sec", "sec2", "statisticsd"]
    
 end
+
+def g_FILEROOT
+    "/var/wh"
+end
