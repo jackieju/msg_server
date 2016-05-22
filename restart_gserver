@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ps ax | grep 'ruby' | grep 'cron_gserver' | grep 'start_msg_server' | grep -v 'cron j' | grep -v 'grep' |awk '{print $1}' |xargs kill -9 
+nohup script/start_msg_server cron_gserver crond> /dev/null 2>&1 &
+
