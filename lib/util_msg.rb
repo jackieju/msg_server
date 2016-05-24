@@ -363,7 +363,7 @@ module MsgUtil
 
                          # if player
                          # onclick = "onclick='reply(#{player.id}, \\'#{player.query('name')}\\')'"
-                            onclick="onclick='onreply(event);' id='#{user_id}@#{user_name}##{Time.now.to_f}'"
+                            onclick="onclick='onreply(event);' id='#{current_user_id}@#{current_user_name}##{Time.now.to_f}'"
                         # end
                      end
 

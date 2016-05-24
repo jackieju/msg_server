@@ -50,17 +50,17 @@ def preload_models_in_rails()
       
 end
 
-def user_id
+def current_user_id
     $uid
 end
 def get_username_by_id(uid)
-    hash = $memcached.get("user_#{user_id}")
+    hash = $memcached.get("user_#{uid}")
     if hash
          return  hash[:name]
     end
     return nil
 end
-def user_name
+def current_user_name
     #$username
-    get_username_by_id(user_id)
+    get_username_by_id(current_user_id)
 end
