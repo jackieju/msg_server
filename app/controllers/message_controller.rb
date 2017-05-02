@@ -181,9 +181,9 @@ class MessageController < ApplicationController
                 # channels = channels.concat(system_channel)
             # p "channels:#{channels}" if is_adm?(uid)
             begin
-                #p "--->1, uid:#{uid}, channels:#{channels}, delete:#{@delete}"
+                d "--->1, uid:#{uid}, channels:#{channels}, delete:#{@delete}"
                 @msg = MsgUtil.query_msg(uid, channels, @delete.to_i ==1)
-                #p "--->2, uid:#{uid}, channels:#{channels}"
+                d "--->2, uid:#{uid}, channels:#{channels}"
                 
             rescue Exception=>e
                 pe e
@@ -286,9 +286,16 @@ class MessageController < ApplicationController
         check_session_exist
         
         #print("uid=#{user_id}")
-              
+        
+       # if (user_id.to_s == "19467")
+       #     p "======>test123"
+       # end
+        
         _get(user_id, params)
-                
+        
+       # if (user_id.to_s == "19467")
+       #     p "======>test123 msg:#{@msg}"
+      #  end  
        
         
                  # p "++++++>start render: #{Time.now.to_f}"       

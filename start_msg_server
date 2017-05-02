@@ -1,0 +1,6 @@
+/var/www/wh/server/wh/start_lighttpd2
+cd /var/www/msg_server
+./restart &
+./startcron
+./start_memcached
+ulimit -HSn 65536

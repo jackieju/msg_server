@@ -8,7 +8,7 @@ end
 
 def g_launchables
    # ["battled", "global_quest", "rank", "daily", "hourly", "5min", "refresh", "sec", "sec2", "calloutd"]
-   ["battled", "global_quest", "rank", "daily", "hourly", "5min", "refresh", "sec", "sec2", "statisticsd", "calloutd"]
+   ["cron_gserver"]
    #["battled", "global_quest", "rank", "daily", "hourly", "5min", "refresh", "sec", "sec2", "statisticsd"]
    
 end

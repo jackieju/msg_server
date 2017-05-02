@@ -5,3 +5,4 @@
 
 #cd /var/www/msg_server/
 #./restart_gserver
+script/dojob production check_server

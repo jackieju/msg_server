@@ -4,6 +4,8 @@ p "===> config file #{File.expand_path(File.dirname(__FILE__) + "/../config/envi
 require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
 
 require 'msgserver.rb'
+require 'cron.rb'
+require 'daemon.rb'
 
 module Rails
     class Logger
@@ -37,6 +39,8 @@ p "argments #{$*.join(",")}"
             rank_loc
         elsif s == "wudujiao"
             do_global_quests
+        elsif s == "check_server"
+          check_server
         else
         end
     }

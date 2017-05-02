@@ -372,6 +372,7 @@ __logf__(ar.size)
                                 #p "get_msg6:#{fname}"
                                 
                                 #p "line = #{line}"
+                                next if line.size == 0
                                 md = /<span class='t'>\[(.*?)\]<\/span>(.*)$/.match(line)
                                 if !md
                                     p "parse failed! line=#{line}"
