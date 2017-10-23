@@ -29,7 +29,7 @@ class Hash
   #def merge!(other_hash){|key, oldval, newval| block} 
   #end
   def method_missing(name, *args, &block) # :nodoc:
-      p "--->hash #{self} miss method #{name}", 10
+     # p "--->hash #{self} miss method #{name}", 10
 #      (delegate || superclass.delegate).send(name, *args, &block)
       normalize if not normalized?
       v =  self[name.to_s]
