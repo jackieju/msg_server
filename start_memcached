@@ -3,5 +3,5 @@
 echo start memcached ...
 echo start memcached for user
 # memcached -d -u root -m 512 -p 11211
-memcached -d -u root -m 32 -p 11211
+memcached -d -u root -m 32 -p 11231
 

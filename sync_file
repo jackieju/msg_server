@@ -12,8 +12,8 @@ echo project path:$pwd1
 #echo ${1#$pwd1}
 rpath=${1#$pwd1}
 echo file relative path:$rpath
-echo rsync -v $1 ju.weihua@s.joyqom.com:/var/www/msg_server/$rpath
-rsync -v $1 ju.weihua@s.joyqom.com:/var/www/msg_server/$rpath
+echo rsync -v $1 ju.weihua@msg.joyqom.com:/var/www/msg_server/$rpath
+rsync -v $1 ju.weihua@msg.joyqom.com:/var/www/msg_server/$rpath
 
 #expect -c "
 #spawn rsync -v $1 ju.weihua@wh.joyqom.com:/var/www/wh/server/wh/$rpath
