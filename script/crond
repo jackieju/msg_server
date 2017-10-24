@@ -95,7 +95,7 @@ def lanuch_single_job(s)
     end
 end
 
-ar = $*[1..$*.size-1]
+ar = $*[1..$*.size-1] 
 ar.each{|s|
     p "==>#{s}"
     # next if confs.include?(s)

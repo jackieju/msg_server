@@ -1,5 +1,9 @@
-/var/www/wh/server/wh/start_lighttpd2
-cd /var/www/msg_server
+# start s.joyqom.com
+#/var/www/wh/server/wh/start_lighttpd2 
+#cd /var/www/msg_server
+
+cd `dirname $0`
+
 ./restart &
 ./startcron
 ./start_memcached

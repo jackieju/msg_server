@@ -1,7 +1,7 @@
 require "server_settings.rb"
 
 def retrieve_corns
-    command = "ps aux | grep ruby | grep cron"
+    command = "ps aux | grep ruby | grep crond | grep msg_server"
         p "command=>#{command}"
         r = `#{command}`
         p "==>r=#{r}"
@@ -13,7 +13,8 @@ def retrieve_corns
         cmd = m[10]
         cmd.strip!
         cron_id = nil
-        cmd.scan(/ruby script\/crond cron[_\d\w]+ ([\d\w]+)$/){|mm|
+        cmd.scan(/ruby script\/crond cron[_\d\w]+\s+([\d\w]+)\s+([\d\w]+)$/){|mm|
+            
             cron_id = mm[0]
         }
         crons[cron_id.to_s]={
@@ -83,9 +84,11 @@ end
 
 def check_crons
     crons = retrieve_corns
+    p "crons:#{crons.inspect}"
+    p "g_launchables:#{g_launchables}"
     g_launchables.each{|l|
         if crons[l] == nil
-            command = "nohup ruby script/crond cron_#{l} #{l} > /dev/null 2>&1"
+            command = "nohup ruby script/crond cron_#{l} #{l} msg_server> /dev/null 2>&1"
             p command
             # r = `#{command}`
             r = system(command) # using `` will cause no return when launch hourly job
@@ -116,6 +119,7 @@ def check_memcached
     
     ar = retrieve_memcached
     p "ar:#{ar}"
+    p "g_memcacheds:#{g_memcacheds}"
     g_memcacheds.each{|k, v|
         if ar.include?(k) == false
             port = k
@@ -127,8 +131,42 @@ def check_memcached
         end
     }
 end
+
+def check_gserver
+    command = "ps aux | grep ruby | grep cron_gserver"
+        p "command=>#{command}"
+        r = `#{command}`
+        p "==>r=#{r}"
+        # if $?.exitstatus != 0
+        #             raise Exception.new("git command=>#{command}\n return:\n#{r}")
+        #         end
+    crons = {}
+    r.scan(/^(\d+)\s+(\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+)\s+(\d+)\s+(.*?)\s+(\w+)\s+(.*?)\s+(\d+:\d+)\s+(ruby script\/crond.*?)$/){|m|
+        cmd = m[10]
+        cmd.strip!
+        
+        crons[0]={
+            :pid=>m[1],
+            :mem1=>m[3],
+            :mem2=>m[4],
+            :mem3=>m[5],
+            :cmd=>m[10]
+        }
+        
+    }
+      
+    if crons.size == 0
+        command = "nohup script/start_msg_server cron_gserver crond> /dev/null 2>&1 &"
+        p command
+        r = system(command) # using `` will cause no return when launch hourly job
+        p r
+    end 
+    
+end
+
 def check_server
     check_mongrels
     check_crons
     check_memcached
+    check_gserver
 end
