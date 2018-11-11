@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# mongrel_rails cluster::restart
+
+mongrel_rails cluster::stop -C config/mongrel_cluster.yml --clean
+rm -f tmp/pids/mongrel_wh.76*
+mongrel_rails cluster::restart -C config/mongrel_cluster.yml
+
+ps -ef | grep ruby

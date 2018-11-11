@@ -1,9 +1,7 @@
-#!/bin/bash
+./stopcron
+./stop_memcached
 
-# mongrel_rails cluster::restart
+./restart_mongrel         # restart mognrel ruby web server
 
-mongrel_rails cluster::stop -C config/mongrel_cluster.yml --clean
-rm -f tmp/pids/mongrel_wh.76*
-mongrel_rails cluster::restart -C config/mongrel_cluster.yml
-
-ps -ef | grep ruby
+./startcron 
+./start_memcached   # restart memcached (for store user authentication)

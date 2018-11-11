@@ -1,0 +1,1 @@
+ps ax | grep 'memcached' | grep '11231' | grep -v 'grep' |awk '{print $1}' |xargs kill

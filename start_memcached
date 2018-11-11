@@ -3,5 +3,6 @@
 echo start memcached ...
 echo start memcached for user
 # memcached -d -u root -m 512 -p 11211
-memcached -d -u root -m 32 -p 11231
+#memcached -d -u root -m 32 -p 11231 -u 0
+memcached -d -u root -m 32 -p 11231 -l 127.0.0.1
 
