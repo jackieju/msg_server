@@ -20,6 +20,7 @@ module Msg
                 @@_channels = {}
                 @@_channels_by_id = {}
                 @@_public_channels = []
+                @@_default_channels = []
                 @@_system_channels = []
                 @@fs_root = "."
                 
@@ -31,7 +32,7 @@ module Msg
             def channels
                 @@_channels
             end
-            def add_channel(name, id, dname, msg_expire=3600*24*30, is_public=true, system=true)
+            def add_channel(name, id, dname, msg_expire=3600*24*30, is_public=true, system=true, default_channel=false)
                 h = {
                     :name=>name,
                     :id=>id,
@@ -41,6 +42,7 @@ module Msg
                 @@_channels_by_id[id.to_s] = h
                 @@_public_channels.push(name) if is_public
                 @@_system_channels.push(name) if system
+                @@_default_channels.push(name) if default_channel
             end
             
             def max_msg_per_file

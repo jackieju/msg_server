@@ -15,20 +15,31 @@ test:
   pool: 5
   timeout: 5000
 
+
 production:
-  adapter: sqlite3
-  database: db/production.sqlite3
-  pool: 5
+  adapter:  mysql
+  database: wh
+  host: localhost
+  username: root
+  password: Ft05ab
   timeout: 5000
+  socket: /var/lib/mysql/mysql.sock
+
 
 cron_daily:
-  adapter: sqlite3
-  database: db/production.sqlite3
-  pool: 5
+  adapter:  mysql
+  database: wh
+  host: localhost
+  username: root
+  password: Ft05ab
   timeout: 5000
+  socket: /var/lib/mysql/mysql.sock
 
 cron_gserver:
-    adapter: sqlite3
-    database: db/production.sqlite3
-    pool: 5
-    timeout: 5000
+  adapter:  mysql
+  database: wh
+  host: localhost
+  username: root
+  password: Ft05ab
+  timeout: 5000
+  socket: /var/lib/mysql/mysql.sock

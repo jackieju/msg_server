@@ -135,7 +135,7 @@ class MessageController < ApplicationController
             
             #ch = session[:ch]
             
-            ch = player.ch
+            ch = player(args[:cl]).ch
             #p "==>player channel:#{ch}"
             
             # p "ch=#{ch}"

@@ -206,11 +206,11 @@ class ApplicationController < ActionController::Base
        return @version
    end
 
-   def player
+   def player(client)
        if $player 
            return $player
        else
-           $player = $memcached.get("user_#{user_id}")
+           $player = $memcached.get("#{client}_user_#{user_id}")
            p "===>player:#{$player.inspect}"
            return $player
        end

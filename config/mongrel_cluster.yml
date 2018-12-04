@@ -4,6 +4,6 @@ group: ju.weihua
 log_file: log/mongrel.log
 port: "7620"
 environment: production
-pid_file: tmp/pids/mongrel_wh.pid
+pid_file: tmp/pids/mongrel_msg.pid
 servers: 10
 
