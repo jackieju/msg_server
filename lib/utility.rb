@@ -53,8 +53,8 @@ end
 def current_user_id
     $uid
 end
-def get_username_by_id(uid)
-    hash = $memcached.get("user_#{uid}")
+def get_username_by_id(ns, uid)
+    hash = $memcached.get("#{ns}_user_#{uid}")
     if hash
          return  hash[:name]
     end
@@ -62,5 +62,5 @@ def get_username_by_id(uid)
 end
 def current_user_name
     #$username
-    get_username_by_id(current_user_id)
+    get_username_by_id($client_ns, current_user_id)
 end

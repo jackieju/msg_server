@@ -1,5 +1,5 @@
 # receive key and user info
-def receive_info(params)
+def receive_info(ns, params)
     key = params[:k]
     uid = params[:u]
     n = params[:n]
@@ -11,22 +11,22 @@ def receive_info(params)
     
     # save it to memcached
     $memcached.set(key, {
-        :u=>uid
+        :u=>"#{uid}"
     })
     p "added session with key #{key}"
     
     # delete old mkey
-    hash = $memcached.get("user_#{uid}")
+    hash = $memcached.get("#{ns}_user_#{uid}")
     if hash && hash[:mkey]
         $memcached.delete(hash[:mkey])
     end
-    $memcached.set("user_#{uid}", {
+    $memcached.set("#{ns}_user_#{uid}", {
         :name=>n,
         :mkey=>key,
         :ch=>ch,
         :sex=>sex
     })
-    p "added user user_#{uid}"
-    log_msg("add user #{uid}(#{key}) to memcached", "gserver")
+    p "added user #{ns}_user_#{uid}"
+    log_msg("add user #{ns}.#{uid}(#{key}) to memcached", "gserver")
     return "OK"
 end

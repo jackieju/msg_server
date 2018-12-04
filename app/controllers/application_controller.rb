@@ -206,10 +206,11 @@ class ApplicationController < ActionController::Base
        return @version
    end
 
-   def player(client)
+   def player(client=nil)
        if $player 
            return $player
        else
+           client = $client_ns if !client
            $player = $memcached.get("#{client}_user_#{user_id}")
            p "===>player:#{$player.inspect}"
            return $player

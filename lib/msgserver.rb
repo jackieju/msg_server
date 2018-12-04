@@ -34,6 +34,25 @@ class MsgServer < GServer
     @@chat << [my_client_id, ""]
     t_last_access = Time.now.to_i
     count = 0
+    ns = ""
+  
+    begin
+        line = io.readline()
+        p "first line:#{line}"
+        line = line.strip
+        ns = line
+        if $client_list.include?(ns) == false
+            p "wrong client namespace:#{ns}"
+            p "client quit"
+            return
+        end
+       
+
+    rescue Exception=>e
+        p "exception:#{e}"
+        err(e)
+    end
+    
     loop do 
         
       # Every 5 seconds check to see if we are receiving any data 
@@ -64,7 +83,7 @@ class MsgServer < GServer
         end
         begin
         p "before handled"
-        handler(io, line)
+        handler(io, line, ns)
         p "handled"
     rescue Exception=>e
         p "exception:#{e}"
@@ -126,7 +145,7 @@ class MsgServer < GServer
      return buf.chomp 
   end
 
-  def handler(io, line)
+  def handler(io, line, ns)
       
       if line.start_with?("k ")
           s = line[2..line.size-1].strip
@@ -138,7 +157,7 @@ class MsgServer < GServer
               :ch=>a[3],
               :sex=>a[4]
           }
-          receive_info(params)
+          receive_info(ns, params)
       elsif line.start_with?("send ")  # send_msg <ch> <type> <m>
           # s = line[5..line.size-1].strip
           # 
@@ -185,7 +204,7 @@ class MsgServer < GServer
             m = read_body(io)
             p "m:#{m}"
 
-            MsgUtil.send_msg(ch, m, type) 
+            MsgUtil.send_msg(ns, ch, m, type) 
       elsif line.start_with?("sendr ") # send_room_msg  <u> <r> <m>
           s = line[6..line.size-1].strip
           i = s.index(" ")
@@ -206,20 +225,20 @@ class MsgServer < GServer
           m = read_body(io)
           p "m:#{m}"
    
-          MsgUtil.send_room_msg(u, r, m)
+          MsgUtil.send_room_msg(ns, u, r, m)
       elsif line.start_with?("senda ") # send_raw_msg <m>
           s = line[6..line.size-1].strip
-          MsgUtil.send_raw_msg(s)
+          MsgUtil.send_raw_msg(ns, s)
       
       elsif line.start_with?("del ") # delete_msg
           s = line[4..line.size-1].strip
       
-          MsgUtil.delete_msg(s)
+          MsgUtil.delete_msg(ns, s)
 
       elsif line.start_with?("delr ") # clear_room_msg
           s = line[5..line.size-1].strip
       
-          MsgUtil.clear_room_msg(s)
+          MsgUtil.clear_room_msg(ns, s)
       
       elsif  line.start_with?("if ") # info
           s = line[3..line.size-1].strip

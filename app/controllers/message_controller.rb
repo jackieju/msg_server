@@ -129,17 +129,19 @@ class MessageController < ApplicationController
             if !@type2 
                 @type2 = "text"
             end
+            
+            ns = $client_ns = args[:ns]
+            
             # c = {:time => @t}
             # p "==>lastreadtime=#{@t.inspect}"
             @msg = ""
             
             #ch = session[:ch]
-            
-            ch = player(args[:cl]).ch
+            ch = player.ch
             #p "==>player channel:#{ch}"
             
             # p "ch=#{ch}"
-            ch = MsgUtil.default_msg_channels if ch == nil || ch ==""
+            ch = MsgUtil.default_msg_channels($client_ns) if ch == nil || ch ==""
             channels = [uid, "tianshi", "sys"] # default channel
 
             # keys = ["闲聊","江湖传闻","系统公告", "天时", "武林大会"]
@@ -150,31 +152,42 @@ class MessageController < ApplicationController
             #p "===>111"
             __logf__
 
-            if args[:c] && args[:c].to_i==1
-                if ch[0..0] != "0"
-                    channels.push("chat")
+            keys = JU::Msg.get_channel_abbr_list(ns)
+            #p "keys:#{keys.inspect}"
+            keys.each{|k|
+                chann = JU::Msg.get_channel_by_abbr(ns, k)
+                if args[k.to_sym] && args[k.to_sym].to_i==1
+                    bit = chann[:bitpos]
+                    if ch[bit..bit] != "0"
+                        channels.push(chann.name)
+                    end
                 end
-            end
-            if args[:r] && args[:r].to_i==1
-                if ch[1..1] != "0"
-                    channels.push("rumor")
-                end
-            end
-            if args[:w] && args[:w].to_i==1
-                if ch[4..4] != "0"
-                    channels.push("wldh")
-                end
-            end
-            if args[:b] && args[:b].to_i==1
-                if ch[5..5] != "0"
-                    channels.push("bwxy")
-                end
-            end
-            if args[:h] && args[:b].to_i==1
-                if ch[6..6] != "0"
-                    channels.push("bh")
-                end
-            end
+            }
+            #if args[:c] && args[:c].to_i==1
+            #    if ch[0..0] != "0"
+            #        channels.push("chat")
+            #    end
+            #end
+            #if args[:r] && args[:r].to_i==1
+            #    if ch[1..1] != "0"
+            #        channels.push("rumor")
+            #    end
+            #end
+            #if args[:w] && args[:w].to_i==1
+            #    if ch[4..4] != "0"
+            #        channels.push("wldh")
+            #    end
+            #end
+            #if args[:b] && args[:b].to_i==1
+            #    if ch[5..5] != "0"
+            #        channels.push("bwxy")
+            #    end
+            #end
+            #if args[:h] && args[:b].to_i==1
+            #    if ch[6..6] != "0"
+            #        channels.push("bh")
+            #    end
+            #end
             __logf__
             #print "===>channels:#{channels}"
 
@@ -182,7 +195,7 @@ class MessageController < ApplicationController
             # p "channels:#{channels}" if is_adm?(uid)
             begin
                 d "--->1, uid:#{uid}, channels:#{channels}, delete:#{@delete}"
-                @msg = MsgUtil.query_msg(uid, channels, @delete.to_i ==1)
+                @msg = MsgUtil.query_msg(ns, uid, channels, @delete.to_i ==1)
                 d "--->2, uid:#{uid}, channels:#{channels}"
                 
             rescue Exception=>e
@@ -258,7 +271,7 @@ class MessageController < ApplicationController
                     # room = @player.room
                     # if room
                         # room_msg = get_room_msg(uid, room)
-                        room_msg = MsgUtil.get_room_msg(uid)
+                        room_msg = MsgUtil.get_room_msg(ns, uid)
                     # end
 
                     if room_msg
@@ -392,7 +405,7 @@ $r : 对别人的粗鲁称呼。\n");
         p "headers: #{request.headers.inspect}"
         # get_session_id
         check_session_exist
-        
+        ns = $client_ns = params[:ns]
         if player.name == nil
             p "user not in session"
             error("user not in session")
@@ -433,7 +446,7 @@ $r : 对别人的粗鲁称呼。\n");
         else
             if ch > 0 #私聊
                 msg2 = ""
-                p2_name = get_username_by_id(ch)
+                p2_name = get_username_by_id(ns, ch)
                 if p2
                     room_msg2 = "你对#{p2_name}说:#{msg}"
                     room_msg = "#{player.name}对#{p2_name}说:#{msg}"
@@ -460,16 +473,16 @@ $r : 对别人的粗鲁称呼。\n");
         roomid = params[:roomid]
         if ch == 0 
             if roomid
-                MsgUtil.send_room_msg(user_id, roomid, msg)
-                MsgUtil.send_msg_to_room(roomid, room_msg, player)
+                MsgUtil.send_room_msg(ns, user_id, roomid, msg)
+                MsgUtil.send_msg_to_room(ns, roomid, room_msg, player)
             end
             # send_msg_to_room(player.roomid, msg)
         elsif ch > 0
-            MsgUtil.send_room_msg(user_id, roomid, li(room_msg2))
-            MsgUtil.send_msg_to_room(roomid, li(room_msg), player)
-            MsgUtil.send_msg(ch, msg)
+            MsgUtil.send_room_msg(ns, user_id, roomid, li(room_msg2))
+            MsgUtil.send_msg_to_room(ns, roomid, li(room_msg), player)
+            MsgUtil.send_msg(ns, ch, msg)
         else
-            MsgUtil.send_msg(ch, msg)
+            MsgUtil.send_msg(ns, ch, msg)
         end
         
         ret_msg = nil

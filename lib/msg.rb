@@ -1,48 +1,199 @@
 require 'rubyutility'
 require 'log.rb'
 
+
 module JU
-module Msg
+class Msg
     # class _Msg 
     # 
     # 
+    class << self
+        @@client_list = {}
+        def add_client(namespace)
+            @@client_list[namespace] = ret = JU::Msg.new(namespace)
+            return ret
+        end
+        def get_client(namespace)
+            ret = @@client_list[namespace] 
+            ret = @@client_list[namespace]  = JU::Msg.new(namespace) if ret == nil
+            return ret 
+        end
+        
+        def init(ns, fs)
+             get_client(ns).init(fs)
+        end
+        def reset(ns)
+            get_client(ns).reset()
+        end
+        
+            def all_channels(ns)
+                
+                get_client(ns).all_channels
+                
+            end
+            
+            def default_channels_bitstr(ns)
+                get_client(ns).default_channels_bitstr
+            end
+            
+            
+            def channels(ns)
+                get_client(ns).channels
+            end
+            def add_channel(ns, name, id, dname, abbr,msg_expire=3600*24*30, is_public=true, system=true, default_channel=false)
+                get_client(ns).add_channel(name, id, dname, abbr, msg_expire, is_public, system, default_channel)
+               
+            end
+            
+            def max_msg_per_file
+                200
+            end
+            # =========== override
+            def fs_root(ns)
+                # "#{g_FILEROOT}/message"
+                get_client(ns).fs_root
+            end
+            
+            # message from public channel can be seen by anyone
+            def public_channel(ns)
+                # ["chat", "rumor", "wldh", "tianshi", "bwxy", "bh"]
+                 get_client(ns).public_channel
+            end
+            
+            # message from system_channel will always be shown
+            def system_channel(ns)
+                get_client(ns).system_channel
+            end
+            
+            # get msg file by channel
+            # channel can be number or string
+            def get_msg_file(ns,ch)
+                get_client(ns).get_msg_file(ch)
 
-        class << self
-            # @@_channels
-            # @@_channels_by_id
-            # @@_public_channels 
-            # @@_system_channels 
-            # @@fs_root
+            end
+            # ===== end of override =======
+            
+            def query_filedata(ns, uid)
+                 get_client(ns).query_filedata(uid)
+
+            end
+            def save_filedata(ns, uid, data)
+
+                get_client(ns).save_filedata(uid, data)
+            end
+            
+            
+            # ======= public method
+            def delete_msg(ns, ch)
+                get_client(ns).delete_msg(ch)
+            end
+
+
+            
+            # uid=> receiver 
+            # ch_array=> channels
+            # delete=> delete message afterawards
+            def query_msg(ns, uid, ch_array, delete=false)
+
+                get_client(ns).query_msg(uid, ch_array, delete)
+
+            end
+            
+            # retrieve and delete message
+            def take_msg(ns, uid,ch_array, t)
+                get_client(ns).take_msg(uid,ch_array, t)
+                
+            end
+
+            def get_public_msg(ns, ch, t)
+                 get_client(ns).get_public_msg(ch, t)
+            end
+            
+            def get_msg(ns, ch, delete=false, context_time=nil)
+                get_client(ns). get_msg(ch, delete, context_time)
+    
+            end
+            
+            
+       
+             def send_msg(ns, ch, msg)
+       
+                 get_client(ns). send_msg(ch, msg)       
+             end
+             
+             def get_channel_by_id(ns, _id)
+                 get_client(ns).get_channel_by_id(_id)
+             end
+             
+             def get_channel_by_name(ns, name)
+                 get_client(ns).get_channel_by_name(name)
+             end
+             def get_channel_by_abbr(ns, abbr)
+                 get_client(ns).get_channel_by_abbr(abbr)
+             end
+             def get_channel_abbr_list(ns)
+                 get_client(ns).get_channel_abbr_list
+             end
+    end
+  #      class << self
+            # @_channels
+            # @_channels_by_id
+            # @_public_channels 
+            # @_system_channels 
+            # @fs_root
+            def initialize(ns)
+                reset
+                @ns = ns
+            end
             def init(fs)
-                @@fs_root = fs
+                @fs_root = fs
+                FileUtils.makedirs(fs) 
             end
             def reset
-                @@_channels = {}
-                @@_channels_by_id = {}
-                @@_public_channels = []
-                @@_default_channels = []
-                @@_system_channels = []
-                @@fs_root = "."
-                
+                @ns = ""
+                @_channels = {}
+                @_channels_by_id = {}
+                @_public_channels = []
+                @_default_channels = []
+                @_system_channels = []
+                @_channels_by_abbr={}
+                @fs_root = "."
+                @default_channels_bit_str = ""
             end
             
             def all_channels
                 channels
             end
-            def channels
-                @@_channels
+            
+            def default_channels_bitstr
+                @default_channels_bit_str
             end
-            def add_channel(name, id, dname, msg_expire=3600*24*30, is_public=true, system=true, default_channel=false)
+            
+            
+            def channels
+                @_channels
+            end
+            def add_channel(name, id, dname, abbr, msg_expire=3600*24*30, is_public=true, system=true, default_channel=false)
                 h = {
                     :name=>name,
+                    :dname=>dname,
                     :id=>id,
+                    :abbr=>abbr,
+                    :bitpos=>@_channels.size, # pos in default channel bit string e.g. 1111101
                     :msg_expire=>msg_expire
                 }
-                @@_channels[name.to_s] = h
-                @@_channels_by_id[id.to_s] = h
-                @@_public_channels.push(name) if is_public
-                @@_system_channels.push(name) if system
-                @@_default_channels.push(name) if default_channel
+                @_channels[name.to_s] = h
+                @_channels_by_id[id.to_s] = h
+                @_channels_by_abbr[abbr.to_s] = h
+                
+                @_public_channels.push(name) if is_public
+                @_system_channels.push(name) if system
+                bitstr = "0"
+                if default_channel
+                     @_default_channels.push(name)
+                     bitstr = "0"
+                 end
+                 @default_channels_bit_str += bitstr
             end
             
             def max_msg_per_file
@@ -51,19 +202,19 @@ module Msg
             # =========== override
             def fs_root
                 # "#{g_FILEROOT}/message"
-                @@fs_root
+                @fs_root
             end
             
             # message from public channel can be seen by anyone
             def public_channel
                 # ["chat", "rumor", "wldh", "tianshi", "bwxy", "bh"]
-                @@_public_channels
+                @_public_channels
             end
             
             # message from system_channel will always be shown
             def system_channel
                 # ["sys", "rumor", "chat", "wldh", "tianshi", "bwxy", "bh"]
-                @@_system_channels
+                @_system_channels
             end
             
             # get msg file by channel
@@ -72,7 +223,7 @@ module Msg
                 if (ch.class == Fixnum || ch.to_i.to_s == ch )
                     id = ch.to_i
                     if id < 0 
-                        _ch = @@_channels_by_id[id.to_s]
+                        _ch = @_channels_by_id[id.to_s]
                         if _ch
                             dir = _ch[:name]
                         else
@@ -429,15 +580,21 @@ __logf__(ar.size)
              end
              
              def get_channel_by_id(_id)
-                 @@_channels_by_id[_id.to_s]
+                 @_channels_by_id[_id.to_s]
              end
              
              def get_channel_by_name(name)
-                 @@_channels[name.to_s]
+                 @_channels[name.to_s]
+             end
+             def get_channel_by_abbr(abbr)
+                 @_channels_by_abbr[abbr.to_s]
+             end
+             def get_channel_abbr_list
+                 @_channels_by_abbr.keys
              end
              # ===== end of public method
         # end
-    end # class << self
+        #end # class << self
 end # module Msg
 
 end # module JU

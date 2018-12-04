@@ -4,7 +4,7 @@ module MsgUtil
 
     # send msg to all members in room
     # if specify pid, then not send to p (Player object)
-    def send_msg_to_room(r, m, pid=nil)
+    def send_msg_to_room(ns, r, m, pid=nil)
         # tempariarily disable send msg to room because server is not in same network
             return
             if r.class == String
@@ -15,12 +15,12 @@ module MsgUtil
             return if room == nil
            room.objs.each{|k,v|
                 if v[:o].is_a?(Pc) && (pid==nil || v[:o].id != pid)
-                    send_room_msg(v[:o].id, room.id, m)
+                    send_room_msg(ns, v[:o].id, room.id, m)
                 end           
            }   
     end
     # ar: array of uid that should not send msg to 
-    def send_msg_to_room2(r, m, ar=nil)
+    def send_msg_to_room2(ns, r, m, ar=nil)
             if r.class == String
                 room = Game::Room::Room.get(r)
             else
@@ -31,16 +31,16 @@ module MsgUtil
 
                 if v[:o].is_a?(Pc) && (ar==nil || !ar.include?(v[:o].id) )
                     p "vo:#{v[:o].id}"
-                    send_room_msg(v[:o].id, room.id, m)
+                    send_room_msg(ns, v[:o].id, room.id, m)
                 end           
            }   
     end
 
     # send fight msg
-    def send_fight_msg_to_room(r, m, p1, p2, p=nil)
-        send_msg_to_room3(r, m, p1, p2, p)
+    def send_fight_msg_to_room(ns, r, m, p1, p2, p=nil)
+        send_msg_to_room3(ns, r, m, p1, p2, p)
     end
-        def send_msg_to_room3(r, m, p1, p2, p=nil)
+        def send_msg_to_room3(ns, r, m, p1, p2, p=nil)
             if r.class == String
                 room = Game::Room::Room.get(r)
             else
@@ -52,7 +52,7 @@ module MsgUtil
                     m = translate_fight_result(m, p1, p2, v[:o])
 
                     p "send_room_msg #{v[:o].id}"
-                    send_room_msg(v[:o].id, room.id, m)
+                    send_room_msg(ns, v[:o].id, room.id, m)
                 end           
            }   
     end
@@ -83,8 +83,8 @@ module MsgUtil
      end
 
 =end
-    def clear_room_msg(uid)
-        fname=get_user_room_msg_file(uid)
+    def clear_room_msg(ns, uid)
+        fname=get_user_room_msg_file(ns, uid)
 
         begin
             if FileTest::exists?(fname)   
@@ -102,13 +102,13 @@ module MsgUtil
         end
     end
 
-    def get_user_room_msg_file(uid)
-        "#{JU::Msg.get_msg_file(uid)}_room"
+    def get_user_room_msg_file(ns, uid)
+        "#{JU::Msg.get_msg_file(ns, uid)}_room"
     end
     # roomid: room object
     #         room id 'room/yangzhou/kedian'
     #         "_any_": ignore room (when show2.erb javascript check room of msg with g_current_room_id)
-    def send_room_msg(uid, roomid, m)
+    def send_room_msg(ns, uid, roomid, m)
         # send_msg(uid,"<rm>#{m}</rm>")
         # return
 
@@ -119,7 +119,7 @@ module MsgUtil
         #end
         m = m.gsub("\n", "")
         m = "<rm id='#{roomid}'>#{m}</rm>"
-        fname=get_user_room_msg_file(uid)
+        fname=get_user_room_msg_file(ns, uid)
 
         time = Time.now
         css_class="roommsg"
@@ -130,9 +130,9 @@ module MsgUtil
         append_file(fname, msg) 
     end
     
-    def get_room_msg(uid)
+    def get_room_msg(ns, uid)
 
-        fname=get_user_room_msg_file(uid)
+        fname=get_user_room_msg_file(ns, uid)
         p "==>fname:#{fname}"
         ret = []
          ret2 = ""
@@ -276,30 +276,31 @@ module MsgUtil
 
 
 
-    def query_msg(uid, ch_array, delete=false)
-        JU::Msg.query_msg(uid, ch_array, delete)
+    def query_msg(ns, uid, ch_array, delete=false)
+        JU::Msg.query_msg(ns, uid, ch_array, delete)
     end
 
-    def send_raw_msg(m)
+    def send_raw_msg(ns, m)
         time = Time.now
         st =  "#{time.strftime("%Y-%m-%d %H:%M:%S")}.#{time.usec.to_s[0,2]}"
 
         msg = "<span class='rumor'><span class='t'>[#{st}]</span>#{m}<br/></span><!--br-->"
-        JU::Msg.send_msg(-2, msg)
+        JU::Msg.send_msg(ns, -2, msg)
 
     end
 
-    def send_bonus_msg(m)
-        send_raw_msg("<div style='color:#ee6666'><span style='color:#ee6666'>[奖励]</span>#{m}</div>")
+    def send_bonus_msg(ns, m)
+        send_raw_msg(ns, "<div style='color:#ee6666'><span style='color:#ee6666'>[奖励]</span>#{m}</div>")
     end
-         def send_msg(ch, m, type='')
+         def send_msg(ns, ch, m, type='')
              
                     # bRaw = false
                     p "send_msg:#{ch} #{m} #{type}"
                     return if m==nil || m.strip == ""
+                    channel = nil
                     if ch.class == String 
-                       if ch.to_i.to_s != ch
-                           channel = JU::Msg.get_channel_by_name(ch)
+                       if ch.to_i.to_s != ch # is name
+                           channel = JU::Msg.get_channel_by_name(ns, ch)
                            if channel == nil
                                p "no this channel #{ch}"
                                return 
@@ -309,8 +310,12 @@ module MsgUtil
                            ch = ch.to_i
                        end
                     end
+                    
+                    # now ch is guaranteed to be a number
+                    
                     stype=""
                      css_class=""
+=begin
                      case ch
                      when -1:stype="闲聊"
                          css_class = "chat"
@@ -344,8 +349,13 @@ module MsgUtil
                      #     bRaw = true
                      #     stype = ch # "<span style='color:#ee8888'>药王谷</spa>"
                      end
-
-
+=end
+                    p  ":get_channel_by_id:#{ns}, #{id}"
+                    if !channel && ch < 0
+                        channel = JU::Msg.get_channel_by_id(ns, ch)
+                        stype=channel[:dname]
+                        css_class=channel[:name]
+                    end
                      # if !bRow && stype != ""
                      if stype != ""
                          stype = "[#{stype}]"
@@ -377,15 +387,15 @@ module MsgUtil
                          msg = "<span class='#{css_class}' #{onclick}><span class='t'>[#{st}]</span><span class='#{css_class}_t'>#{stype}</span>#{m}<br/></span><!--br-->"
                      # end
                 
-                JU::Msg.send_msg(ch, msg)
+                JU::Msg.send_msg(ns, ch, msg)
             end
-            def delete_msg(ch)
-                JU::Msg.delete_msg(ch)
+            def delete_msg(ns, ch)
+                JU::Msg.delete_msg(ns, ch)
             end
-            def send_move_msg(p, newroom, old_room=nil, to=nil)
+            def send_move_msg(ns, p, newroom, old_room=nil, to=nil)
                 if !p.is_ghost?         
                      if old_room && to
-                         send_msg_to_room(old_room, li("#{p.query("name")}向#{Game::Room::Room.exitdef[to.to_sym]}离开了", "vola")+li("<script>remove_obj('#{Quest.escaped_id(getObjId(p))}');remove_vola();</script>"), p)             
+                         send_msg_to_room(ns, old_room, li("#{p.query("name")}向#{Game::Room::Room.exitdef[to.to_sym]}离开了", "vola")+li("<script>remove_obj('#{Quest.escaped_id(getObjId(p))}');remove_vola();</script>"), p)             
                      end
 
 
@@ -409,34 +419,35 @@ module MsgUtil
                               end
 
                               if p.is_a?(Human)
-                                  send_msg_to_room(newroom, li("一条人影走了过来","vola"), p)
+                                  send_msg_to_room(ns, newroom, li("一条人影走了过来","vola"), p)
                               elsif p.is_a?(Insect)
                                   if p.subrace == "飞虫"
-                                      send_msg_to_room(newroom, li("一#{p.unit}#{p.name}飞了过来","vola"), p)
+                                      send_msg_to_room(ns, newroom, li("一#{p.unit}#{p.name}飞了过来","vola"), p)
 
                                  else
-                                     send_msg_to_room(newroom, li("一#{p.unit}#{p.name}爬了过来","vola"), p)
+                                     send_msg_to_room(ns, newroom, li("一#{p.unit}#{p.name}爬了过来","vola"), p)
 
                                  end
 
                               else
-                                  send_msg_to_room(newroom, li("一#{p.unit}#{p.name}走了过来","vola"), p)
+                                  send_msg_to_room(ns, newroom, li("一#{p.unit}#{p.name}走了过来","vola"), p)
                               end
-                              send_msg_to_room(newroom, li("<script>add_obj(\"#{add_obj_msg}\");remove_vola();</script>"), p)
+                              send_msg_to_room(ns, newroom, li("<script>add_obj(\"#{add_obj_msg}\");remove_vola();</script>"), p)
                          end
                      end
                   end  
             end
             
             # default channel setting is 111110
-            def msg_type_list
-                ["闲聊", "江湖传闻","系统公告", "天时", "武林大会", "保卫襄阳", "帮会门派"]
+            #def msg_type_list(namespace)
+            #    ["闲聊", "江湖传闻","系统公告", "天时", "武林大会", "保卫襄阳", "帮会门派"]
+            #end
+            def default_msg_channels(namespace)
+                JU::Msg.get_client(namespace).default_channels_bitstr()
+                #"1111101"
             end
-            def default_msg_channels
-                "1111101"
-            end
-            def get_msg_file(ch)
-                JU::Msg.get_msg_file(ch)
+            def get_msg_file(client, ch)
+                JU::Msg.get_client(client).get_msg_file(ch)
             end
         end # class << self
 end
